@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Existing vs Proposed — Capability Comparison</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --accent: #3b82f6; --accent2: #f59e0b;
+    --text: #e2e8f0; --muted: #94a3b8; --existing: #c0504d; --proposed: #3b6ea5;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  header { padding: 24px 32px; border-bottom: 1px solid #334155; }
+  header h1 { margin: 0 0 4px 0; font-size: 22px; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; padding: 24px 32px; }
+  .card { background: var(--panel); border-radius: 10px; padding: 18px 20px; border: 1px solid #334155; }
+  .card h2 { font-size: 15px; margin: 0 0 12px 0; color: #f1f5f9; }
+  .card h3 { font-size: 13px; margin: 14px 0 6px 0; color: #cbd5e1; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  td, th { padding: 5px 6px; text-align: left; border-bottom: 1px solid #334155; }
+  th { color: var(--muted); font-weight: normal; }
+  .shared-row { opacity: 0.55; }
+  canvas { max-height: 260px; }
+  .full-width { grid-column: 1 / -1; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+  .controls input[type=number], .controls select { background: #0f172a; color: var(--text); border: 1px solid #334155; border-radius: 6px; padding: 4px 6px; }
+  .controls button { background: var(--accent); color: white; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  .controls button:disabled { opacity: 0.5; cursor: wait; }
+  .note { font-size: 12px; color: var(--muted); margin: 6px 0 0 0; }
+  .ok { color: #4ade80; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Existing vs Proposed &mdash; Capability-Flag Comparison</h1>
+  <p>Eight capability flags (FR1&ndash;FR8), isolated single-factor ablation, fully stacked comparison, and the repeated-seed analysis and sensitivity sweeps</p>
+</header>
+<main>
+
+  <div class="card full-width">
+    <h2>Comparison Aspects (Table I)</h2>
+    <table id="capsTable"></table>
+  </div>
+
+  <div class="card full-width">
+    <h2>Isolated Single-Factor Ablation</h2>
+    <canvas id="ablationChart"></canvas>
+    <table id="ablationTable"></table>
+  </div>
+
+  <div class="card">
+    <h2>Trip Planning &amp; Last-Mile</h2>
+    <canvas id="tripChart"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Real-Time Information Quality</h2>
+    <canvas id="realtimeChart"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Para-transit Dispatch</h2>
+    <canvas id="paratransitChart"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>Synthetic Network Properties (Section V.A.2)</h2>
+    <table id="networkStatsTable"></table>
+    <p class="note">Realised properties of the seed-42 network; modal share and transfers refer to the fastest feasible itinerary of the Proposed configuration over the 300 baseline queries.</p>
+  </div>
+
+  <div class="card full-width">
+    <h2>Repeated-Seed Robustness</h2>
+    <div class="controls">
+      <label>Seed sets <input type="number" id="repN" value="30" min="1" max="200"></label>
+      <label><input type="checkbox" id="repFix"> keep the network fixed (seed 42)</label>
+      <button id="repRun">Run</button>
+      <span id="repStatus"></span>
+    </div>
+    <p class="note">Seed set 0 is the baseline configuration; set i shifts every seed by 1000&middot;i. Runs execute in parallel and are cached.</p>
+    <div id="repDirections" class="note"></div>
+    <canvas id="repChart"></canvas>
+    <table id="repTable"></table>
+  </div>
+
+  <div class="card full-width">
+    <h2>Sensitivity Sweeps</h2>
+    <div class="controls">
+      <label>Seed sets per level <input type="number" id="sensSeeds" value="10" min="1" max="100"></label>
+      <label>Parameter <select id="sensParam"><option value="">all sweeps</option></select></label>
+      <button id="sensRun">Run</button>
+      <span id="sensStatus"></span>
+    </div>
+    <p class="note">One-at-a-time sweeps around the baseline (baseline level included). All ten sweeps have 43 levels in total, so 10 seed sets per level is 430 runs (several minutes, cached afterwards); a single sweep takes under a minute.</p>
+    <div class="controls" id="sensChartControls" hidden>
+      <label>Chart sweep <select id="sensChartParam"></select></label>
+      <label>Outcome <select id="sensChartMetric"></select></label>
+    </div>
+    <canvas id="sensChart"></canvas>
+    <div id="sensTables"></div>
+  </div>
+
+</main>
+
+<script>
+const API = '/api/comparison';
+// Aspect names are the FrAspect labels of capabilities/Capabilities.java, verbatim.
+const FR_ROWS = [
+  ["FR1 Multimodal route planning (bus and train)", "Single mode (bus only)", "Multimodal (bus + rail)"],
+  ["FR2 Trip aggregation and itinerary generation", "No aggregation", "Aggregated (up to 4 transfers)"],
+  ["FR3 Multi-criteria recommendation and ranking", "Yes", "Yes"],
+  ["FR4 Real-time public transport status", "Yes", "Yes"],
+  ["FR5 Crowdsourcing-enhanced ETA and crowdedness indicators", "No", "Yes"],
+  ["FR6 Para-transit integration (taxi/three-wheeler and carpooling)", "No", "Yes"],
+  ["FR7 Custom origin-destination inputs and access-point discovery", "Yes", "Yes"],
+  ["FR8 Last-mile continuity and para-transit fallback coordination", "No", "Yes"],
+];
+const AXES = { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } };
+const LEGEND = { legend: { labels: { color: '#e2e8f0' } } };
+const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v)) ? '—' : Number(v).toFixed(d);
+
+function renderCapsTable() {
+  const t = document.getElementById('capsTable');
+  t.innerHTML = '<tr><th>Aspect</th><th>Existing</th><th>Proposed</th></tr>' +
+    FR_ROWS.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+}
+
+let ablationChart, tripChart, realtimeChart, paratransitChart, repChart, sensChart;
+
+async function loadAblation() {
+  const rows = await (await fetch(`${API}/ablation`)).json();
+  const table = document.getElementById('ablationTable');
+  table.innerHTML = '<tr><th>FR aspect</th><th>Metric</th><th>Proposed</th><th>Removed</th><th>&Delta;</th></tr>' +
+    rows.map(r => `<tr class="${r.sharedNotDifferentiator ? 'shared-row' : ''}">
+        <td>${r.frAspect}</td><td>${r.metric}</td>
+        <td>${r.proposedValue.toFixed(2)}</td><td>${r.withCapabilityRemoved.toFixed(2)}</td>
+        <td>${r.delta.toFixed(2)}</td></tr>`).join('');
+
+  const diffRows = rows.filter(r => !r.sharedNotDifferentiator);
+  const ctx = document.getElementById('ablationChart');
+  if (ablationChart) ablationChart.destroy();
+  ablationChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: diffRows.map(r => r.field),
+      datasets: [
+        { label: 'Proposed', data: diffRows.map(r => r.proposedValue), backgroundColor: '#3b6ea5' },
+        { label: 'Capability removed', data: diffRows.map(r => r.withCapabilityRemoved), backgroundColor: '#c0504d' },
+      ]
+    },
+    options: { indexAxis: 'y', scales: AXES, plugins: LEGEND }
+  });
+}
+
+async function loadStacked() {
+  const data = await (await fetch(`${API}/stacked`)).json();
+  const e = data.existing, p = data.proposed;
+
+  const t1 = document.getElementById('tripChart');
+  if (tripChart) tripChart.destroy();
+  tripChart = new Chart(t1, {
+    type: 'bar',
+    data: {
+      labels: ['Itinerary found %', 'End-to-end success %', 'Mean alternatives'],
+      datasets: [
+        { label: 'Existing', backgroundColor: '#c0504d',
+          data: [e.tripPlanning.itineraryFoundRatePct, e.tripPlanning.endToEndSuccessRatePct, e.tripPlanning.meanAlternativesShown] },
+        { label: 'Proposed', backgroundColor: '#3b6ea5',
+          data: [p.tripPlanning.itineraryFoundRatePct, p.tripPlanning.endToEndSuccessRatePct, p.tripPlanning.meanAlternativesShown] },
+      ]
+    },
+    options: { plugins: LEGEND, scales: AXES }
+  });
+
+  const t2 = document.getElementById('realtimeChart');
+  if (realtimeChart) realtimeChart.destroy();
+  realtimeChart = new Chart(t2, {
+    type: 'bar',
+    data: {
+      labels: ['Mean ETA error (min)', 'Crowding accuracy (system-wide %)', 'Crowding accuracy when known %'],
+      datasets: [
+        { label: 'Existing', backgroundColor: '#c0504d', data: [e.realtime.meanAbsEtaErrorMin, e.realtime.crowdingSystemWideAccuracyPct, e.realtime.crowdingAccuracyWhenKnownPct] },
+        { label: 'Proposed', backgroundColor: '#3b6ea5', data: [p.realtime.meanAbsEtaErrorMin, p.realtime.crowdingSystemWideAccuracyPct, p.realtime.crowdingAccuracyWhenKnownPct] },
+      ]
+    },
+    options: { plugins: LEGEND, scales: AXES }
+  });
+
+  const t3 = document.getElementById('paratransitChart');
+  if (paratransitChart) paratransitChart.destroy();
+  paratransitChart = new Chart(t3, {
+    type: 'bar',
+    data: {
+      labels: ['Match rate %', 'Mean wait (min)'],
+      datasets: [
+        { label: 'Existing', backgroundColor: '#c0504d', data: [e.paratransitDirect.matchRatePct, e.paratransitDirect.meanWaitMin || 0] },
+        { label: 'Proposed', backgroundColor: '#3b6ea5', data: [p.paratransitDirect.matchRatePct, p.paratransitDirect.meanWaitMin || 0] },
+      ]
+    },
+    options: { plugins: LEGEND, scales: AXES }
+  });
+}
+
+// Synthetic network properties
+async function loadNetworkStats() {
+  const s = await (await fetch(`${API}/network-stats`)).json();
+  const rows = [
+    ['Stops (served / unserved)', `${s.stops} (${s.servedStops} / ${s.unservedStops})`],
+    ['Transfer nodes (stops on ≥ 2 routes)', s.transferNodes],
+    ['Bus–rail interchange stops', s.busRailInterchanges],
+    ['Route pairs sharing ≥ 1 stop', `${s.overlappingRoutePairs} of ${s.routePairs}`],
+    ['Route-km / mean inter-stop spacing', `${fmt(s.routeKm, 0)} km / ${fmt(s.meanInterStopKm, 1)} km`],
+    ['Timetabled connections / vehicle trips per day', `${s.connections} / ${s.vehicleTrips}`],
+    ['Fastest itinerary uses rail', `${fmt(s.railShareOfFastestItineraryPct, 1)} % of feasible queries`],
+    ['Mean transfers / direct itineraries', `${fmt(s.meanTransfersFastestItinerary, 2)} / ${fmt(s.directItinerarySharePct, 1)} %`],
+    ['Mean query crow-fly distance', `${fmt(s.meanQueryCrowFlyKm, 1)} km`],
+  ];
+  document.getElementById('networkStatsTable').innerHTML =
+    '<tr><th>Property</th><th>Value</th></tr>' + rows.map(r => `<tr><td>${r[0]}</td><td class="num">${r[1]}</td></tr>`).join('');
+}
+
+// Repeated-seed analysis
+const REP_METRICS = [
+  ['itineraryFoundRatePct', 'Itinerary found %'],
+  ['endToEndSuccessRatePct', 'End-to-end success %'],
+  ['meanAlternativesShown', 'Mean alternatives shown'],
+  ['pctNeedingWholeTripParatransit', 'Need whole-trip para-transit %'],
+  ['meanAbsEtaErrorMin', 'Mean absolute ETA error (min)'],
+  ['crowdingKnownRatePct', 'Crowding known %'],
+  ['crowdingAccuracyWhenKnownPct', 'Crowding accuracy when known %'],
+  ['crowdingSystemWideAccuracyPct', 'Crowding accuracy, system-wide %'],
+  ['paratransitMatchRatePct', 'Para-transit match rate % (naive → coordinated)'],
+];
+const REP_DELTAS = [
+  ['delta.fr1.itineraryFoundRatePct', 'Δ FR1 (itinerary found, pp)'],
+  ['delta.fr2.itineraryFoundRatePct', 'Δ FR2 (itinerary found, pp)'],
+  ['delta.fr5.crowdingSystemWideAccuracyPct', 'Δ FR5 (crowding accuracy, pp)'],
+  ['delta.fr6.endToEndSuccessRatePct', 'Δ FR6 (end-to-end success, pp)'],
+  ['delta.fr8.paratransitMatchRatePct', 'Δ FR8 (match rate, pp)'],
+];
+
+// draws ±SD error bars on top of grouped bars; datasets carry `errors: [...]`
+const errorBarPlugin = {
+  id: 'errorBars',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.data.datasets.forEach((ds, di) => {
+      if (!ds.errors) return;
+      const meta = chart.getDatasetMeta(di);
+      meta.data.forEach((bar, i) => {
+        const sd = ds.errors[i];
+        if (!sd) return;
+        const scale = chart.scales.y;
+        const y1 = scale.getPixelForValue(ds.data[i] - sd), y2 = scale.getPixelForValue(ds.data[i] + sd);
+        ctx.save(); ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(bar.x, y1); ctx.lineTo(bar.x, y2);
+        ctx.moveTo(bar.x - 4, y1); ctx.lineTo(bar.x + 4, y1); ctx.moveTo(bar.x - 4, y2); ctx.lineTo(bar.x + 4, y2);
+        ctx.stroke(); ctx.restore();
+      });
+    });
+  }
+};
+
+async function runRepeated() {
+  const n = document.getElementById('repN').value, fix = document.getElementById('repFix').checked;
+  const btn = document.getElementById('repRun'), status = document.getElementById('repStatus');
+  btn.disabled = true; status.textContent = 'running… (about a minute for 30 seed sets)';
+  try {
+    const r = await (await fetch(`${API}/repeated-seeds?n=${n}&fixNetwork=${fix}`)).json();
+    const S = Object.fromEntries(r.summary.map(s => [s.metric, s]));
+    const d = r.directionCounts;
+    document.getElementById('repDirections').innerHTML =
+      `<span class="ok">Direction of every gain over ${d.runs} runs:</span> Proposed finds more itineraries ${d.proposedFindsMoreItineraries}/${d.runs}; ` +
+      `higher end-to-end success ${d.proposedHigherEndToEndSuccess}/${d.runs}; lower ETA error ${d.proposedLowerEtaError}/${d.runs}; ` +
+      `coordinated dispatch beats naive ${d.coordinatedDispatchBeatsNaive}/${d.runs}; ΔFR2 &gt; ΔFR1 ${d.fr2DeltaExceedsFr1Delta}/${d.runs}.`;
+    const cell = s => s ? `${fmt(s.mean)} ± ${fmt(s.sd)} <span style="color:#94a3b8">[${fmt(s.min)}, ${fmt(s.max)}]</span>` : '—';
+    let html = '<tr><th>Metric</th><th>Existing (mean ± SD [min, max])</th><th>Proposed (mean ± SD [min, max])</th></tr>';
+    for (const [k, label] of REP_METRICS) {
+      const e = k === 'paratransitMatchRatePct' ? S['ablation.fr8Removed.paratransitMatchRatePct'] : S['existing.' + k];
+      html += `<tr><td>${label}</td><td class="num">${cell(e)}</td><td class="num">${cell(S['proposed.' + k])}</td></tr>`;
+    }
+    for (const [k, label] of REP_DELTAS) html += `<tr><td>${label}</td><td></td><td class="num">${cell(S[k])}</td></tr>`;
+    document.getElementById('repTable').innerHTML = html;
+
+    const chartKeys = ['itineraryFoundRatePct', 'endToEndSuccessRatePct', 'crowdingSystemWideAccuracyPct', 'crowdingAccuracyWhenKnownPct', 'paratransitMatchRatePct'];
+    const labels = ['Itinerary found %', 'End-to-end success %', 'Crowding acc. system-wide %', 'Crowding acc. when known %', 'PT match % (naive vs coord.)'];
+    const ex = chartKeys.map(k => k === 'paratransitMatchRatePct' ? S['ablation.fr8Removed.paratransitMatchRatePct'] : S['existing.' + k]);
+    const pr = chartKeys.map(k => S['proposed.' + k]);
+    if (repChart) repChart.destroy();
+    repChart = new Chart(document.getElementById('repChart'), {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label: `Existing (mean of ${d.runs})`, backgroundColor: '#c0504d', data: ex.map(s => s ? s.mean : 0), errors: ex.map(s => s ? s.sd : 0) },
+        { label: `Proposed (mean of ${d.runs})`, backgroundColor: '#3b6ea5', data: pr.map(s => s ? s.mean : 0), errors: pr.map(s => s ? s.sd : 0) },
+      ] },
+      options: { plugins: LEGEND, scales: AXES },
+      plugins: [errorBarPlugin]
+    });
+    status.textContent = `done (${r.seedSets} seed sets${r.networkFixed ? ', network fixed' : ''})`;
+  } catch (err) {
+    status.textContent = 'failed: ' + err;
+  } finally { btn.disabled = false; }
+}
+
+// Sensitivity sweeps
+const SENS_COLS = [
+  ['existing.itineraryFoundRatePct', 'Found E %'],
+  ['proposed.itineraryFoundRatePct', 'Found P %'],
+  ['proposed.endToEndSuccessRatePct', 'Success P %'],
+  ['existing.meanAbsEtaErrorMin', 'ETA E (min)'],
+  ['proposed.meanAbsEtaErrorMin', 'ETA P (min)'],
+  ['proposed.crowdingKnownRatePct', 'Known %'],
+  ['proposed.crowdingAccuracyWhenKnownPct', 'Acc. when known %'],
+  ['proposed.crowdingSystemWideAccuracyPct', 'Acc. system-wide %'],
+  ['ablation.fr8Removed.paratransitMatchRatePct', 'Match naive %'],
+  ['proposed.paratransitMatchRatePct', 'Match coord. %'],
+  ['delta.fr1.itineraryFoundRatePct', 'Δ FR1'],
+  ['delta.fr2.itineraryFoundRatePct', 'Δ FR2'],
+];
+let sensData = null;
+
+async function loadSensParams() {
+  const params = await (await fetch(`${API}/sensitivity/parameters`)).json();
+  const sel = document.getElementById('sensParam');
+  params.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; sel.appendChild(o); });
+}
+
+async function runSensitivity() {
+  const seeds = document.getElementById('sensSeeds').value, param = document.getElementById('sensParam').value;
+  const btn = document.getElementById('sensRun'), status = document.getElementById('sensStatus');
+  btn.disabled = true; status.textContent = param ? 'running one sweep…' : 'running all sweeps… (several minutes)';
+  try {
+    sensData = await (await fetch(`${API}/sensitivity?seeds=${seeds}${param ? '&parameter=' + encodeURIComponent(param) : ''}`)).json();
+    const byParam = {};
+    sensData.levels.forEach(l => (byParam[l.parameter] = byParam[l.parameter] || []).push(l));
+    let html = '';
+    for (const [p, levels] of Object.entries(byParam)) {
+      html += `<h3>${p}</h3><table><tr><th>Level</th>${SENS_COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr>`;
+      html += levels.map(l => `<tr><td>${l.level}</td>${SENS_COLS.map(c => `<td class="num">${fmt(l.mean[c[0]])}</td>`).join('')}</tr>`).join('');
+      html += '</table>';
+    }
+    document.getElementById('sensTables').innerHTML = html + `<p class="note">Means over ${sensData.seedsPerLevel} seed sets per level.</p>`;
+
+    const cp = document.getElementById('sensChartParam'), cm = document.getElementById('sensChartMetric');
+    cp.innerHTML = Object.keys(byParam).map(p => `<option value="${p}">${p}</option>`).join('');
+    cm.innerHTML = SENS_COLS.map(c => `<option value="${c[0]}">${c[1]}</option>`).join('');
+    cm.value = 'proposed.meanAbsEtaErrorMin';
+    document.getElementById('sensChartControls').hidden = false;
+    drawSensChart();
+    status.textContent = 'done';
+  } catch (err) {
+    status.textContent = 'failed: ' + err;
+  } finally { btn.disabled = false; }
+}
+
+function drawSensChart() {
+  if (!sensData) return;
+  const p = document.getElementById('sensChartParam').value, m = document.getElementById('sensChartMetric').value;
+  const levels = sensData.levels.filter(l => l.parameter === p);
+  const label = (SENS_COLS.find(c => c[0] === m) || [m, m])[1];
+  if (sensChart) sensChart.destroy();
+  sensChart = new Chart(document.getElementById('sensChart'), {
+    type: 'line',
+    data: { labels: levels.map(l => l.level), datasets: [
+      { label: `${label} (mean)`, data: levels.map(l => l.mean[m]), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.2 },
+      { label: 'mean + SD', data: levels.map(l => l.mean[m] + (l.sd[m] || 0)), borderColor: 'rgba(245,158,11,0.35)', borderDash: [4, 4], pointRadius: 0 },
+      { label: 'mean − SD', data: levels.map(l => l.mean[m] - (l.sd[m] || 0)), borderColor: 'rgba(245,158,11,0.35)', borderDash: [4, 4], pointRadius: 0 },
+    ] },
+    options: { plugins: LEGEND, scales: { x: { title: { display: true, text: p, color: '#94a3b8' }, ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+  });
+}
+
+document.getElementById('repRun').addEventListener('click', runRepeated);
+document.getElementById('sensRun').addEventListener('click', runSensitivity);
+document.getElementById('sensChartParam').addEventListener('change', drawSensChart);
+document.getElementById('sensChartMetric').addEventListener('change', drawSensChart);
+
+renderCapsTable();
+loadAblation();
+loadStacked();
+loadNetworkStats();
+loadSensParams();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+title: Capability-Flag Transit Comparison Simulation
+message: >-
+  If you use this software, please cite both the software itself and the
+  conference paper it accompanies.
+type: software
+abstract: >-
+  A Java and Spring Boot simulation that compares an Existing and a Proposed
+  multimodal public and para-transit system across eight capability flags
+  (FR1-FR8), by isolated single-factor ablation and fully stacked comparison,
+  together with a repeated-seed analysis and one-at-a-time sensitivity sweeps.
+authors:
+  - given-names: Chandimal
+    family-names: Adikari
+    orcid: https://orcid.org/0009-0001-0082-2448
+license: MIT
+version: 1.0.0
+date-released: 2026-09-17
+repository-code: https://github.com/amchandimal/Public-and-Para-Transit-Integration-Simulation
+keywords:
+  - public transport
+  - para-transit
+  - multimodal journey planning
+  - crowdsourcing
+  - transport simulation
+preferred-citation:
+  type: conference-paper
+  title: >-
+    Bridging the Connectivity Gap: A Crowdsourced Software Architecture for
+    Multimodal Public and Para-Transit Integration
+  authors:
+    - given-names: Chandimal
+      family-names: Adikari
+      orcid: https://orcid.org/0009-0001-0082-2448
+  collection-title: >-
+    Proc. 2026 IEEE International Conference on Electrical Engineering and
+    Emerging Technologies (ICEEET 2026)
+  conference:
+    name: >-
+      2026 IEEE International Conference on Electrical Engineering and Emerging
+      Technologies (ICEEET 2026)
+  year: 2026
+# Before publishing, set date-released to the date the tagged release is
+# published, and check that both author lists match the published paper. The DOI
+# and page range are added to the preferred-citation entry once the proceedings
+# appear.

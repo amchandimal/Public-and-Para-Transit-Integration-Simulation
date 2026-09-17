@@ -1,0 +1,18 @@
+{
+  "stops" : 40,
+  "servedStops" : 32,
+  "unservedStops" : 8,
+  "transferNodes" : 25,
+  "busRailInterchanges" : 16,
+  "railStops" : 16,
+  "overlappingRoutePairs" : 36,
+  "routePairs" : 45,
+  "routeKm" : 493.271442674328,
+  "meanInterStopKm" : 8.08641709302177,
+  "connections" : 7750,
+  "vehicleTrips" : 1268,
+  "railShareOfFastestItineraryPct" : 62.758620689655174,
+  "meanTransfersFastestItinerary" : 0.9827586206896551,
+  "directItinerarySharePct" : 28.275862068965516,
+  "meanQueryCrowFlyKm" : 15.326910384679662
+}

@@ -1,0 +1,27 @@
+{
+  "existing.tripPlanning.itineraryFoundRatePct": 46.0,
+  "existing.tripPlanning.endToEndSuccessRatePct": 46.0,
+  "existing.tripPlanning.meanAlternativesShown": 1.0507246376811594,
+  "existing.tripPlanning.pctNeedingWholeTripParatransit": 54.0,
+  "existing.tripPlanning.meanWaitWhenParatransitNeededMin": null,
+  "existing.realtime.meanAbsEtaErrorMin": 2.4444267244177604,
+  "existing.realtime.crowdingKnownRatePct": 0.0,
+  "existing.realtime.crowdingAccuracyWhenKnownPct": 0.0,
+  "existing.realtime.crowdingSystemWideAccuracyPct": 33.33333333333479,
+  "existing.paratransitDirect.available": false,
+  "existing.paratransitDirect.matchRatePct": 0.0,
+  "existing.paratransitDirect.meanWaitMin": null,
+
+  "proposed.tripPlanning.itineraryFoundRatePct": 96.66666666666667,
+  "proposed.tripPlanning.endToEndSuccessRatePct": 100.0,
+  "proposed.tripPlanning.meanAlternativesShown": 1.9655172413793103,
+  "proposed.tripPlanning.pctNeedingWholeTripParatransit": 3.3333333333333335,
+  "proposed.tripPlanning.meanWaitWhenParatransitNeededMin": 5.189730136538087,
+  "proposed.realtime.meanAbsEtaErrorMin": 2.115959244797352,
+  "proposed.realtime.crowdingKnownRatePct": 25.900000000000002,
+  "proposed.realtime.crowdingAccuracyWhenKnownPct": 85.71428571428571,
+  "proposed.realtime.crowdingSystemWideAccuracyPct": 46.899999999999345,
+  "proposed.paratransitDirect.available": true,
+  "proposed.paratransitDirect.matchRatePct": 94.3,
+  "proposed.paratransitDirect.meanWaitMin": 6.493918619044741
+}
