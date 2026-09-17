@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.4</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.transit</groupId>
+  <artifactId>simulation2</artifactId>
+  <version>1.0.0</version>
+  <name>Capability-Flag Transit Comparison Simulation</name>
+  <description>
+    Capability-flag comparison simulation: Existing vs Proposed multimodal
+    transit system, compared across eight functional-requirement aspects
+    (FR1-FR8) by isolated single-factor ablation and a fully stacked
+    end-to-end comparison, with a repeated-seed and sensitivity-sweep
+    robustness analysis.
+  </description>
+  <url>https://github.com/amchandimal/Public-and-Para-Transit-Integration-Simulation</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Chandimal Adikari</name>
+      <url>https://orcid.org/0009-0001-0082-2448</url>
+    </developer>
+  </developers>
+
+  <!-- Overrides the scm block inherited from the Spring Boot parent, which otherwise
+       makes the effective POM point at the spring-boot repository. -->
+  <scm>
+    <url>https://github.com/amchandimal/Public-and-Para-Transit-Integration-Simulation</url>
+    <connection>scm:git:https://github.com/amchandimal/Public-and-Para-Transit-Integration-Simulation.git</connection>
+    <developerConnection>scm:git:git@github.com:amchandimal/Public-and-Para-Transit-Integration-Simulation.git</developerConnection>
+  </scm>
+
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Fixes every archive entry's timestamp, so repeated builds of the same
+         source produce byte-identical artifacts. Update on each release. -->
+    <project.build.outputTimestamp>2026-09-17T00:00:00Z</project.build.outputTimestamp>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

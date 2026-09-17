@@ -1,0 +1,57 @@
+{
+  "FR1.field": "multimodal",
+  "FR1.metric": "itineraryFoundRatePct",
+  "FR1.proposedValue": 96.66666666666667,
+  "FR1.withCapabilityRemoved": 96.66666666666667,
+  "FR1.delta": 0.0,
+  "FR1.sharedNotDifferentiator": false,
+
+  "FR2.field": "aggregation",
+  "FR2.metric": "itineraryFoundRatePct",
+  "FR2.proposedValue": 96.66666666666667,
+  "FR2.withCapabilityRemoved": 60.333333333333336,
+  "FR2.delta": 36.333333333333336,
+  "FR2.sharedNotDifferentiator": false,
+
+  "FR3.field": "multiCriteriaRanking",
+  "FR3.metric": "meanAlternativesShown",
+  "FR3.proposedValue": 1.9655172413793103,
+  "FR3.withCapabilityRemoved": 1.9655172413793103,
+  "FR3.delta": 0.0,
+  "FR3.sharedNotDifferentiator": true,
+
+  "FR4.field": "realtimeStatus",
+  "FR4.metric": "meanAbsEtaErrorMin",
+  "FR4.proposedValue": 2.115959244797352,
+  "FR4.withCapabilityRemoved": 2.115959244797352,
+  "FR4.delta": 0.0,
+  "FR4.sharedNotDifferentiator": true,
+
+  "FR5.field": "crowdsourcing",
+  "FR5.metric": "crowdingSystemWideAccuracyPct",
+  "FR5.proposedValue": 46.899999999999345,
+  "FR5.withCapabilityRemoved": 33.33333333333479,
+  "FR5.delta": 13.566666666664553,
+  "FR5.sharedNotDifferentiator": false,
+
+  "FR6.field": "paratransit",
+  "FR6.metric": "endToEndSuccessRatePct",
+  "FR6.proposedValue": 100.0,
+  "FR6.withCapabilityRemoved": 96.66666666666667,
+  "FR6.delta": 3.3333333333333286,
+  "FR6.sharedNotDifferentiator": false,
+
+  "FR7.field": "accessDiscovery",
+  "FR7.metric": "itineraryFoundRatePct",
+  "FR7.proposedValue": 96.66666666666667,
+  "FR7.withCapabilityRemoved": 96.66666666666667,
+  "FR7.delta": 0.0,
+  "FR7.sharedNotDifferentiator": true,
+
+  "FR8.field": "lastmileFallback",
+  "FR8.metric": "matchRatePct",
+  "FR8.proposedValue": 94.3,
+  "FR8.withCapabilityRemoved": 72.93333333333332,
+  "FR8.delta": 21.366666666666674,
+  "FR8.sharedNotDifferentiator": false
+}

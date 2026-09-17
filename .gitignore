@@ -1,0 +1,32 @@
+# Maven build output
+target/
+*.class
+*.jar
+*.war
+dependency-reduced-pom.xml
+# The Maven wrapper jar is tracked deliberately, if one is ever added.
+!.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# IDE and editor state
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+nbproject/private/
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# results/ and docs/ are tracked: the committed result files let a
+# reader inspect the numbers without running the simulation. Do not add them here.

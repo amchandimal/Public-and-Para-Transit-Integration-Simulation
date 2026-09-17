@@ -1,0 +1,13 @@
+metricGroup,metric,existing,proposed
+tripPlanning,itineraryFoundRatePct,46.0,96.66666666666667
+tripPlanning,endToEndSuccessRatePct,46.0,100.0
+tripPlanning,meanAlternativesShown,1.0507246376811594,1.9655172413793103
+tripPlanning,pctNeedingWholeTripParatransit,54.0,3.3333333333333335
+tripPlanning,meanWaitWhenParatransitNeededMin,,5.189730136538087
+realtime,meanAbsEtaErrorMin,2.4444267244177604,2.115959244797352
+realtime,crowdingKnownRatePct,0.0,25.900000000000002
+realtime,crowdingAccuracyWhenKnownPct,0.0,85.71428571428571
+realtime,crowdingSystemWideAccuracyPct,33.33333333333479,46.899999999999345
+paratransitDirect,available,false,true
+paratransitDirect,matchRatePct,0.0,94.3
+paratransitDirect,meanWaitMin,,6.493918619044741

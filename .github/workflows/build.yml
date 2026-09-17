@@ -1,0 +1,87 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and check the determinism contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build
+        run: mvn -B verify
+
+      - name: Start the application
+        run: |
+          set -euo pipefail
+          nohup java -jar target/simulation2-*.jar > app.log 2>&1 &
+          echo $! > app.pid
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null --max-time 3 http://localhost:8080/api/comparison/parameters; then
+              echo "the application is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the application did not become ready within 60 s" >&2
+          cat app.log >&2
+          exit 1
+
+      - name: Assert the determinism contract
+        run: |
+          set -euo pipefail
+
+          # With the default seeds the stacked comparison must report an itinerary-found
+          # rate of 46.0 % for Existing and 96.66666666666667 % for Proposed. Any other
+          # value means the build is not reproducing the baseline configuration.
+          curl -fsS --max-time 120 http://localhost:8080/api/comparison/stacked -o stacked.json
+
+          existing=$(jq -r '.existing.tripPlanning.itineraryFoundRatePct' stacked.json)
+          proposed=$(jq -r '.proposed.tripPlanning.itineraryFoundRatePct' stacked.json)
+
+          awk -v e="$existing" -v p="$proposed" 'BEGIN {
+            expected_e = 46.0
+            expected_p = 96.66666666666667
+            tolerance  = 1e-9
+            de = e - expected_e; if (de < 0) de = -de
+            dp = p - expected_p; if (dp < 0) dp = -dp
+            if (de > tolerance) { printf "Existing itinerary-found rate: expected %.14g, got %s\n", expected_e, e; bad = 1 }
+            if (dp > tolerance) { printf "Proposed itinerary-found rate: expected %.14g, got %s\n", expected_p, p; bad = 1 }
+            if (bad) exit 1
+            printf "determinism contract holds: Existing %s, Proposed %s\n", e, p
+          }'
+
+          # The CSV view must agree with the JSON character for character.
+          curl -fsS --max-time 120 http://localhost:8080/api/comparison/csv/stacked -o stacked.csv
+          grep -Fxq 'tripPlanning,itineraryFoundRatePct,46.0,96.66666666666667' stacked.csv
+          echo "the CSV view agrees"
+
+      - name: Stop the application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" 2>/dev/null || true
+          fi
+
+      - name: Upload the application log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-log
+          path: app.log
+          if-no-files-found: ignore
